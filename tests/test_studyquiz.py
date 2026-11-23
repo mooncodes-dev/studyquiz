@@ -3,6 +3,7 @@
 실행:  python -m unittest discover -s tests -v
 """
 import importlib.util
+import threading
 import unittest
 from unittest import mock
 
@@ -278,6 +279,71 @@ class TestMultipartParsing(unittest.TestCase):
         self.assertEqual(fields["text"], ["안녕하세요"])
         self.assertEqual(files["file"][0], "a.txt")
         self.assertEqual(files["file"][1], "파일 내용".encode("utf-8"))
+
+
+class TestWebPdfUpload(unittest.TestCase):
+    """웹 데모에 PDF를 올렸을 때 빈 응답이 오지 않는지 확인합니다."""
+
+    def _post_pdf(self, pdf_bytes: bytes) -> tuple[int, str]:
+        import urllib.request
+        from http.server import ThreadingHTTPServer
+        from studyquiz.webapp import StudyQuizHandler
+
+        server = ThreadingHTTPServer(("127.0.0.1", 0), StudyQuizHandler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            boundary = "----studyquizwebtest"
+            body = (
+                f"--{boundary}\r\n"
+                'Content-Disposition: form-data; name="text"\r\n\r\n'
+                "\r\n"
+                f"--{boundary}\r\n"
+                'Content-Disposition: form-data; name="file"; filename="lec.pdf"\r\n'
+                "Content-Type: application/pdf\r\n\r\n"
+            ).encode("utf-8") + pdf_bytes + (
+                f"\r\n--{boundary}\r\n"
+                'Content-Disposition: form-data; name="mode"\r\n\r\n'
+                "local\r\n"
+                f"--{boundary}--\r\n"
+            ).encode("utf-8")
+            request = urllib.request.Request(
+                f"http://127.0.0.1:{server.server_address[1]}/quiz",
+                data=body, method="POST",
+                headers={"Content-Type":
+                         f"multipart/form-data; boundary={boundary}"})
+            with urllib.request.urlopen(request, timeout=10) as response:
+                return response.status, response.read().decode("utf-8")
+        finally:
+            server.shutdown()
+            server.server_close()
+
+    @staticmethod
+    def _make_text_pdf() -> bytes:
+        from io import BytesIO
+        from pypdf import PdfWriter
+
+        buffer = BytesIO()
+        writer = PdfWriter()
+        writer.add_blank_page(width=200, height=200)
+        writer.write(buffer)
+        return buffer.getvalue()
+
+    def test_missing_pypdf_shows_guide_not_empty_response(self):
+        # pypdf가 없는 환경을 흉내 내면, 연결이 끊기는 대신 설치 안내가 떠야 합니다.
+        real_find_spec = importlib.util.find_spec
+
+        def fake_find_spec(name, package=None):
+            if name == "pypdf":
+                return None
+            return real_find_spec(name, package)
+
+        with mock.patch.object(importlib.util, "find_spec", fake_find_spec), \
+                mock.patch.object(extract_mod, "_ocr_available",
+                                  return_value=False):
+            status, page = self._post_pdf(b"%PDF-1.4 dummy")
+        self.assertEqual(status, 200)
+        self.assertIn("pip install pypdf", page)
 
 
 if __name__ == "__main__":
