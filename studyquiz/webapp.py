@@ -255,6 +255,16 @@ class StudyQuizHandler(BaseHTTPRequestHandler):
             self.send_error(404)
 
     def do_POST(self):  # noqa: N802
+        # 어떤 오류가 나도 연결을 그냥 끊지(빈 응답) 않고 안내 화면으로 답합니다.
+        # extract는 CLI용으로 SystemExit에 안내 문구를 담아 올리기도 합니다.
+        try:
+            self._do_post()
+        except SystemExit as exc:
+            self._send_html(_error_page(str(exc)))
+        except Exception as exc:
+            self._send_html(_error_page(f"처리 중 오류가 발생했습니다.\n{exc}"))
+
+    def _do_post(self):
         form, files = self._read_post()
         if self.path == "/quiz":
             text = form.get("text", [""])[0]
