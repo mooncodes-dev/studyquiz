@@ -1,9 +1,12 @@
 """StudyQuiz 명령줄 인터페이스(CLI).
 
 사용법:
-    python -m studyquiz.cli summarize <파일> [--num 3]
-    python -m studyquiz.cli quiz <파일> [--num 5] [--type 혼합] [--out quiz.json] [--interactive]
+    python -m studyquiz.cli summarize <파일> [--num 3] [--ai]
+    python -m studyquiz.cli quiz <파일> [--num 5] [--type 혼합] [--out quiz.json] [--interactive] [--ai]
     python -m studyquiz.cli grade <quiz.json> <answers.json>
+
+--ai 를 붙이면 GEMINI_API_KEY 환경 변수의 키로 Gemini 요약/퀴즈를 사용합니다.
+(모델은 키로 쓸 수 있는 것 중 자동으로 선택됩니다.)
 
 quiz --out 으로 저장한 JSON에는 정답이 포함됩니다(답안지).
 grade의 answers.json은 답 문자열의 JSON 배열입니다. 예: ["프로세스", "2", ...]
@@ -15,7 +18,7 @@ import json
 import sys
 from pathlib import Path
 
-from .extract import read_text
+from .extract import read_text, ScannedDocumentError
 from .summarize import summarize
 from .quizgen import generate_quiz, MC, CLOZE, MIXED
 from .grade import grade
@@ -42,7 +45,15 @@ def _print_grade(result: dict) -> None:
 
 def cmd_summarize(args) -> int:
     text = read_text(args.file)
-    summary = summarize(text, args.num)
+    if args.ai:
+        from .gemini import summarize_with_gemini, GeminiError
+        try:
+            summary = summarize_with_gemini(text, args.num)
+        except GeminiError as exc:
+            print(f"Gemini 요약을 사용할 수 없습니다: {exc}", file=sys.stderr)
+            return 1
+    else:
+        summary = summarize(text, args.num)
     if not summary:
         print("요약할 문장이 없습니다. 입력 텍스트를 확인해 주세요.")
         return 1
@@ -54,7 +65,15 @@ def cmd_summarize(args) -> int:
 
 def cmd_quiz(args) -> int:
     text = read_text(args.file)
-    questions = generate_quiz(text, args.num, args.type, seed=args.seed)
+    if args.ai:
+        from .gemini import quiz_with_gemini, GeminiError
+        try:
+            questions = quiz_with_gemini(text, args.num)
+        except GeminiError as exc:
+            print(f"Gemini 퀴즈를 사용할 수 없습니다: {exc}", file=sys.stderr)
+            return 1
+    else:
+        questions = generate_quiz(text, args.num, args.type, seed=args.seed)
     if not questions:
         print("문제를 만들 수 없습니다. 텍스트가 너무 짧거나 핵심 용어가 부족합니다.")
         return 1
@@ -92,6 +111,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_sum = sub.add_parser("summarize", help="강의 자료를 요약합니다")
     p_sum.add_argument("file", help="입력 파일(.txt 또는 pypdf 설치 시 .pdf)")
     p_sum.add_argument("--num", type=int, default=3, help="요약 문장 수 (기본 3)")
+    p_sum.add_argument("--ai", action="store_true",
+                       help="Gemini로 요약합니다 (GEMINI_API_KEY 필요)")
     p_sum.set_defaults(func=cmd_summarize)
 
     p_quiz = sub.add_parser("quiz", help="퀴즈를 생성합니다")
@@ -105,6 +126,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_quiz.add_argument("--show-answers", action="store_true", help="정답도 함께 출력")
     p_quiz.add_argument("--interactive", action="store_true",
                         help="문제를 바로 풀고 채점까지 받습니다")
+    p_quiz.add_argument("--ai", action="store_true",
+                        help="Gemini로 문제를 만듭니다 (GEMINI_API_KEY 필요)")
     p_quiz.set_defaults(func=cmd_quiz)
 
     p_grade = sub.add_parser("grade", help="저장된 퀴즈 JSON과 답안 JSON으로 채점합니다")
@@ -117,7 +140,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv=None) -> int:
     args = build_parser().parse_args(argv)
-    return args.func(args)
+    try:
+        return args.func(args)
+    except ScannedDocumentError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

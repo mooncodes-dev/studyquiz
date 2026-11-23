@@ -1,6 +1,8 @@
 """퀴즈 생성 모듈.
 
-문서에서 핵심 용어를 뽑아 두 가지 유형의 문제를 만듭니다.
+문서에서 TF-IDF 기준 핵심 용어를 뽑아 두 가지 유형의 문제를 만듭니다.
+단순 빈도가 아니라 문서 안에서 두드러지는 개념어가 정답이 되므로,
+긴 강의 자료에서도 핵심 개념을 묻는 문제가 나옵니다.
 - 빈칸형(cloze): 핵심 용어가 든 문장에서 그 용어를 ____ 로 가립니다.
 - 객관식: 빈칸형 문항에 정답 용어 + 문서의 다른 핵심 용어 3개를 보기로 제시합니다.
 
@@ -15,7 +17,7 @@ from __future__ import annotations
 import random
 
 from .extract import split_sentences
-from .summarize import extract_keywords
+from .summarize import extract_keywords_tfidf
 
 BLANK = "____"
 MC = "객관식"
@@ -71,7 +73,7 @@ def generate_quiz(text: str, num_questions: int = 5,
     if quiz_type not in (MC, CLOZE, MIXED):
         raise ValueError(f"알 수 없는 문제 유형입니다: {quiz_type}")
     rng = random.Random(seed)
-    keywords = extract_keywords(text, top_n=30)
+    keywords = extract_keywords_tfidf(text, top_n=30)
     candidates = _candidate_sentences(text, keywords)
     rng.shuffle(candidates)
 
