@@ -55,10 +55,10 @@ python -m studyquiz.cli summarize examples/sample_lecture.txt --ai
 python -m studyquiz.cli quiz examples/sample_lecture.txt --ai
 ```
 
-PDF를 읽으려면 선택 의존성 하나만 설치하면 됩니다.
+필요한 패키지는 아래 명령 한 번으로 전부 설치됩니다. (PDF 입력, 한국어 형태소 분석, 스캔본 OCR 포함)
 
 ```bash
-pip install -r requirements.txt   # pypdf
+pip install -r requirements.txt
 ```
 
 ## 실행 예시
@@ -117,7 +117,7 @@ studyquiz/
 │   └── sample_lecture.txt   # 자체 제작 예제 (운영체제 개요)
 ├── docs/
 │   └── 발표개요.md
-├── requirements.txt         # pypdf (선택)
+├── requirements.txt         # 필요 패키지 한 번에 설치
 └── LICENSE                  # MIT
 ```
 
