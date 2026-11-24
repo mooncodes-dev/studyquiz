@@ -2,7 +2,7 @@
 
 사용법:
     python -m studyquiz.cli summarize <파일> [--num 3] [--ai]
-    python -m studyquiz.cli quiz <파일> [--num 5] [--type 혼합] [--out quiz.json] [--interactive] [--ai]
+    python -m studyquiz.cli quiz <파일> [--num 5] [--type 혼합|객관식|빈칸형|OX형] [--out quiz.json] [--interactive] [--ai]
     python -m studyquiz.cli grade <quiz.json> <answers.json>
 
 --ai 를 붙이면 GEMINI_API_KEY 환경 변수의 키로 Gemini 요약/퀴즈를 사용합니다.
@@ -20,14 +20,14 @@ from pathlib import Path
 
 from .extract import read_text, ScannedDocumentError
 from .summarize import summarize
-from .quizgen import generate_quiz, MC, CLOZE, MIXED
+from .quizgen import generate_quiz, MC, CLOZE, OX, MIXED
 from .grade import grade
 
 
 def _print_questions(questions: list[dict], show_answers: bool = False) -> None:
     for i, q in enumerate(questions, 1):
         print(f"\n[{i}] ({q['type']}) {q['question']}")
-        if q["type"] == MC:
+        if q.get("options"):
             for j, option in enumerate(q["options"], 1):
                 print(f"    {j}. {option}")
         if show_answers:
@@ -90,6 +90,8 @@ def cmd_quiz(args) -> int:
             prompt = f"[{i}] 답을 입력하세요"
             if q["type"] == MC:
                 prompt += " (보기 번호 또는 보기 내용)"
+            elif q["type"] == OX:
+                prompt += " (O 또는 X)"
             answers.append(input(prompt + ": "))
         _print_grade(grade(questions, answers))
     return 0
@@ -118,7 +120,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_quiz = sub.add_parser("quiz", help="퀴즈를 생성합니다")
     p_quiz.add_argument("file", help="입력 파일(.txt 또는 pypdf 설치 시 .pdf)")
     p_quiz.add_argument("--num", type=int, default=5, help="문제 수 (기본 5)")
-    p_quiz.add_argument("--type", choices=[MC, CLOZE, MIXED], default=MIXED,
+    p_quiz.add_argument("--type", choices=[MC, CLOZE, OX, MIXED], default=MIXED,
                         help="문제 유형 (기본 혼합)")
     p_quiz.add_argument("--seed", type=int, default=None,
                         help="무작위 시드 (같은 값을 주면 같은 문제가 나옵니다)")

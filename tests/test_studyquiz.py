@@ -12,7 +12,7 @@ from studyquiz.extract import (
     split_sentences, extract_text_from_bytes, needs_ocr, ScannedDocumentError,
 )
 from studyquiz.summarize import summarize, extract_keywords, tokenize, kiwi_available
-from studyquiz.quizgen import generate_quiz, BLANK, MC, CLOZE
+from studyquiz.quizgen import generate_quiz, BLANK, MC, CLOZE, OX
 from studyquiz.grade import grade
 from studyquiz.gemini import pick_model
 from studyquiz.webapp import parse_multipart
@@ -122,6 +122,61 @@ class TestGrade(unittest.TestCase):
         answers = [str(q["answer_index"] + 1) for q in mc_quiz]
         result = grade(mc_quiz, answers)
         self.assertEqual(result["score"], 100.0)
+
+
+# ---------------------------------------------------------------------------
+# OX형 퀴즈
+# ---------------------------------------------------------------------------
+
+class TestOXQuiz(unittest.TestCase):
+    def setUp(self):
+        self.quiz = generate_quiz(TEXT, 6, quiz_type=OX, seed=3)
+
+    def test_ox_question_format(self):
+        self.assertTrue(self.quiz)
+        for q in self.quiz:
+            self.assertEqual(q["type"], OX)
+            self.assertEqual(q["options"], ["O", "X"])
+            self.assertIn(q["answer"], ("O", "X"))
+            self.assertEqual(q["options"][q["answer_index"]], q["answer"])
+
+    def test_true_statement_is_original_sentence(self):
+        sentences = split_sentences(TEXT)
+        for q in self.quiz:
+            if q["answer"] == "O":
+                self.assertIn(q["question"], sentences)
+
+    def test_false_statement_is_altered(self):
+        sentences = split_sentences(TEXT)
+        for q in self.quiz:
+            if q["answer"] == "X":
+                self.assertNotIn(q["question"], sentences)
+
+    def test_both_answers_appear_over_many_seeds(self):
+        answers = set()
+        for seed in range(20):
+            for q in generate_quiz(TEXT, 4, quiz_type=OX, seed=seed):
+                answers.add(q["answer"])
+        self.assertEqual(answers, {"O", "X"})
+
+    def test_ox_grading_accepts_aliases(self):
+        q_o = {"type": OX, "question": "s", "options": ["O", "X"],
+               "answer": "O", "answer_index": 0}
+        q_x = {"type": OX, "question": "s", "options": ["O", "X"],
+               "answer": "X", "answer_index": 1, "explanation": "설명"}
+        for o_ans, x_ans in [("o", "x"), ("1", "2"), ("참", "거짓"), ("O", "X")]:
+            result = grade([q_o, q_x], [o_ans, x_ans])
+            self.assertEqual(result["score"], 100.0, (o_ans, x_ans))
+
+    def test_wrong_x_answer_shows_explanation(self):
+        q_x = {"type": OX, "question": "s", "options": ["O", "X"],
+               "answer": "X", "answer_index": 1, "explanation": "원래 용어 안내"}
+        result = grade([q_x], ["O"])
+        self.assertIn("원래 용어 안내", result["results"][0]["feedback"])
+
+    def test_mixed_includes_ox(self):
+        quiz = generate_quiz(TEXT, 6, seed=42)
+        self.assertIn(OX, {q["type"] for q in quiz})
 
 
 # ---------------------------------------------------------------------------

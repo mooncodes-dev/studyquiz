@@ -19,7 +19,7 @@ from urllib.parse import parse_qs
 
 from .extract import extract_text_from_bytes, ScannedDocumentError
 from .summarize import summarize
-from .quizgen import generate_quiz, MC
+from .quizgen import generate_quiz
 from .grade import grade
 
 HOST = "127.0.0.1"
@@ -138,7 +138,7 @@ def render_quiz(text: str, num: int, snum: int,
         parts.append('<div class="card">')
         parts.append(f"<p><strong>[{i + 1}] ({html.escape(q['type'])})</strong> "
                      f"{html.escape(q['question'])}</p>")
-        if q["type"] == MC:
+        if q.get("options"):  # 객관식·OX형은 보기를 라디오 버튼으로 보여줍니다.
             for option in q["options"]:
                 esc = html.escape(option)
                 parts.append(
