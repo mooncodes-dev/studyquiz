@@ -18,6 +18,8 @@ env/
 .vscode/
 .idea/
 .DS_Store
+Thumbs.db
+desktop.ini
 
 # StudyQuiz 생성물
 quiz.json
