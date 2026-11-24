@@ -36,6 +36,7 @@ python -m studyquiz.cli quiz examples/sample_lecture.txt --num 5 --interactive
 
 # 4) Gemini로 요약/퀴즈 만들기 (선택, 모델 자동 선택)
 export GEMINI_API_KEY=<본인의 Gemini API 키>
+# Windows PowerShell: $env:GEMINI_API_KEY="<본인의 Gemini API 키>"
 python -m studyquiz.cli summarize examples/sample_lecture.txt --ai
 python -m studyquiz.cli quiz examples/sample_lecture.txt --ai
 ```
