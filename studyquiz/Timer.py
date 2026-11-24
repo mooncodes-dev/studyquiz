@@ -1,9 +1,9 @@
 """StudyQuiz 제한시간 퀴즈 — 별도 실행 가능한 Tkinter GUI.
 
 새 파일로 추가하기만 하면 됩니다. 기존 팀원의 파일은 수정하지 않습니다.
-실행: python quiz_timer.py
+실행 (프로젝트 루트에서): python -m studyquiz.Timer
 
-필요한 파일: wrong_answer.py (같은 폴더), studyquiz/ 패키지 (저장소에 이미 있음)
+필요한 파일: studyquiz/wrongAnswer.py, studyquiz/studyStats.py
 """
 from __future__ import annotations
 
@@ -16,7 +16,8 @@ from tkinter import filedialog, messagebox, scrolledtext, ttk
 from studyquiz.extract import extract_text_from_bytes
 from studyquiz.grade import grade
 from studyquiz.quizgen import generate_quiz, MC, CLOZE, OX, MIXED
-from wrong_answer import DEFAULT_OUTPUT_DIR, save_wrong_answers
+from .wrongAnswer import DEFAULT_OUTPUT_DIR, save_wrong_answers
+from .studyStats import record_result
 
 
 QUESTION_TYPES = (MIXED, MC, CLOZE, OX)
@@ -43,6 +44,7 @@ class TimedQuizApp:
         self.answer_vars: list[tk.StringVar] = []
         self.answer_controls: list[tk.Widget] = []
         self.deadline: float | None = None
+        self.started_at: float | None = None
         self.timer_job: str | None = None
         self.finished = True
 
@@ -172,7 +174,8 @@ class TimedQuizApp:
             self.status_label.configure(text=f"강의 자료에서 {len(questions)}개 문제만 생성되었습니다.")
         else:
             self.status_label.configure(text="퀴즈가 시작되었습니다. 제한시간 내에 답안을 제출하세요.")
-        self.deadline = time.monotonic() + (minutes * 60)
+        self.started_at = time.monotonic()
+        self.deadline = self.started_at + (minutes * 60)
         self._update_timer()
 
     def _build_questions(self) -> None:
@@ -229,6 +232,12 @@ class TimedQuizApp:
                    f"점수: {result['score']}점 | 정답 {result['correct']} / {result['total']} | "
                    f"오답 {wrong_count}\n")
         self.status_label.configure(text=f"채점 완료 · {result['score']}점")
+        try:
+            elapsed = time.monotonic() - self.started_at if self.started_at is not None else None
+            record_result(result, duration_seconds=elapsed, timed_out=timed_out)
+            summary += "학습 통계에 시험 기록을 저장했습니다.\n"
+        except (OSError, ValueError, TypeError) as exc:
+            summary += f"학습 통계 저장 실패: {exc}\n"
         details = []
         for idx, r in enumerate(result["results"], start=1):
             mark = "O" if r["is_correct"] else "X"
