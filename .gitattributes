@@ -1,0 +1,2 @@
+# Windows 배치 파일은 항상 CRLF 줄바꿈으로 받습니다.
+*.bat text eol=crlf

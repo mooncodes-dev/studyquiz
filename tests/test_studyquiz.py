@@ -3,6 +3,8 @@
 실행:  python -m unittest discover -s tests -v
 """
 import importlib.util
+import sys
+from pathlib import Path
 import threading
 import unittest
 from unittest import mock
@@ -403,3 +405,32 @@ class TestWebPdfUpload(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# ---------------------------------------------------------------------------
+# 데스크톱 실행기 (gui.py) — 화면 없이 확인할 수 있는 부분만 검사
+# ---------------------------------------------------------------------------
+
+_HAS_TK = importlib.util.find_spec("tkinter") is not None
+
+
+@unittest.skipUnless(_HAS_TK, "tkinter가 없는 환경")
+class TestGuiHelpers(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+        import gui
+        cls.gui = gui
+
+    def test_build_quiz_returns_summary_and_questions(self):
+        summary, questions = self.gui.build_quiz(TEXT, 4, 2, OX, seed=1)
+        self.assertEqual(len(summary), 2)
+        self.assertEqual(len(questions), 4)
+        self.assertTrue(all(q["type"] == OX for q in questions))
+
+    def test_build_quiz_rejects_empty_text(self):
+        with self.assertRaises(ValueError):
+            self.gui.build_quiz("   ", 3, 2)
+
+    def test_example_file_exists(self):
+        self.assertTrue(self.gui.EXAMPLE_FILE.exists())

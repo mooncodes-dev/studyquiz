@@ -88,6 +88,19 @@ Q. 디렉터리는 ____들을 묶어 계층 구조로 …
 
 ![웹 데모 실행 결과](docs/screenshots/web-result.png)
 
+## 데스크톱 실행기 (가장 쉬운 방법)
+
+Windows에서는 **`run.bat`을 더블클릭**하면 메뉴가 뜹니다.
+번호만 고르면 데스크톱 실행기, 웹 데모, 터미널 퀴즈, 테스트, 패키지 설치를 바로 실행할 수 있습니다.
+
+```bash
+python gui.py   # 다른 OS에서는 직접 실행
+```
+
+창에서 파일을 열거나(txt/pdf) 텍스트를 붙여넣고, 요약 문장 수·문제 수·문제 유형(혼합/객관식/빈칸형/OX형)을
+고른 뒤 버튼을 누르면 요약과 퀴즈가 나옵니다. OX형은 O/X 버튼으로 답하고, 채점하면 문항별 정답과 해설이 표시됩니다.
+파이썬 표준 라이브러리(`tkinter`)만 사용합니다.
+
 ## 웹 데모
 
 ```bash
@@ -120,6 +133,8 @@ studyquiz/
 │   └── sample_lecture.txt   # 자체 제작 예제 (운영체제 개요)
 ├── docs/
 │   └── 발표개요.md
+├── gui.py                   # 데스크톱 실행기 (tkinter)
+├── run.bat                  # Windows 원클릭 실행 메뉴
 ├── requirements.txt         # 필요 패키지 한 번에 설치
 └── LICENSE                  # MIT
 ```
@@ -134,7 +149,7 @@ studyquiz/
 
 ```bash
 python -m unittest discover -s tests
-# Ran 41 tests — OK
+# Ran 44 tests — OK
 ```
 
 요약(문장 수·출처·순서, 긴 문서 핵심 문장·중복 방지), 퀴즈(문항 수·정답 유일성·보기 구성),
@@ -149,6 +164,7 @@ python -m unittest discover -s tests
 | 퀴즈 생성 (김태욱) | `quizgen.py`, `grade.py` — 문제 생성과 채점, OX형 추가 |
 | 웹 UI | `webapp.py`, `cli.py` — 웹 데모와 명령줄 인터페이스 |
 | 테스트·문서 | `tests/`, README, 발표 자료 |
+| 실행기 (김태욱) | `gui.py`, `run.bat` — 데스크톱 실행기와 원클릭 실행 메뉴 |
 
 ## 한계와 개선 방향
 
