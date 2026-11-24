@@ -71,6 +71,22 @@ Q. 디렉터리는 ____들을 묶어 계층 구조로 …
 - 오답입니다. 정답은 '메모리'입니다.
 ```
 
+## 실행 화면
+
+예제 강의 자료(운영체제 개요)로 직접 실행한 화면입니다.
+
+**명령줄 실행 (요약 + 퀴즈 생성)**
+
+![명령줄 실행 화면](docs/screenshots/cli.png)
+
+**웹 데모 입력 화면**
+
+![웹 데모 입력 화면](docs/screenshots/web-main.png)
+
+**웹 데모 실행 결과 (요약 + 퀴즈 카드)**
+
+![웹 데모 실행 결과](docs/screenshots/web-result.png)
+
 ## 웹 데모
 
 ```bash
@@ -141,6 +157,26 @@ python -m unittest discover -s tests
 - 한국어 형태소 분석은 간이 규칙 기반입니다.
   오픈소스 형태소 분석기를 연동하면 핵심 용어 추출 정확도를 높일 수 있습니다.
 - 퀴즈 유형(빈칸형·객관식)에 OX형과 단답형을 추가할 계획입니다.
+
+## 사용한 패키지
+
+핵심 기능은 파이썬 표준 라이브러리만으로 동작합니다. 아래 패키지는 선택 기능에 쓰이며, `pip install -r requirements.txt`로 한 번에 설치됩니다.
+
+| 패키지 | 버전 | 용도 |
+| --- | --- | --- |
+| pypdf | >= 4.0 | PDF 파일 입력 |
+| kiwipiepy | >= 0.18 | 한국어 형태소 분석 (용어 추출 정확도 향상) |
+| pypdfium2 | 최신 | 스캔본 PDF 페이지 렌더링 |
+| PyMuPDF | 최신 | 스캔본 PDF 페이지 렌더링 |
+| rapidocr-onnxruntime | 최신 | 스캔본 PDF OCR |
+
+## 참고 자료
+
+- pypdf — PDF 읽기 라이브러리
+- kiwipiepy — 한국어 형태소 분석기
+- PyMuPDF / pypdfium2 — PDF 페이지 렌더링
+- rapidocr-onnxruntime — OCR 엔진
+- Gemini API — 선택 기능인 AI 요약·퀴즈 생성에 사용 (API 키는 서버에 저장되지 않음)
 
 ## 라이선스
 
